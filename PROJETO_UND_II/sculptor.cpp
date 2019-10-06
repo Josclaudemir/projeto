@@ -1,5 +1,5 @@
 #include "sculptor.h"
-#include <cstdlib>
+#include <string>
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -11,35 +11,16 @@ Sculptor::Sculptor(int qx, int qy, int qz) {
     ny = qy;
     nz = qz;
 
-    if (nx <= 0 || ny <= 0 || nz <=0){
-        nx = ny = nz = 0;
-    }
-
     v = new Voxel**[nx];
-    if (v == nullptr){
-        exit(0);
-    }
-
     v[0] = new Voxel*[nx*ny];
-    if (v[0] == nullptr){
-        exit(0);
-    }
-
     v[0][0] = new Voxel[nx*ny*nz];
-    if (v[0][0] == nullptr){
-        exit(0);
-    }
 
     for (int i = 0; i < nx; i++){
-        if (i < (nx-1)){
             v[i+1] = v[i] + ny;
-        }
-        for (int j = 1; j < ny; j++){
-            v[i][j] = v[i][j-1]+nz;
-            if (j == (ny-1) && i != (nx-1)){
-                v[i+1][0] = v[i][j]+nz;
-            }
-        }
+    }
+
+    for (int j = 1; j < nx*ny; j++){
+        v[0][j]=v[0][j-1]+nz;
     }
 
     for (int i = 0; i < nx; i++){
@@ -52,19 +33,16 @@ Sculptor::Sculptor(int qx, int qy, int qz) {
 }
 
 Sculptor::~Sculptor() {
-    if (nx == 0 || ny == 0 || nz == 0){
-        return;
-    }
     delete [] v[0][0];
     delete [] v[0];
     delete [] v;
 }
 
 void Sculptor::setColor(float r, float g, float b, float alpha) {
-    rl = r;
-    gl = g;
-    bl = b;
-    al = alpha;
+    this -> rl = r;
+    this -> gl = g;
+    this -> bl = b;
+    this -> al = alpha;
 }
 
 void Sculptor::putVoxel(int x, int y, int z) {
@@ -82,7 +60,9 @@ void Sculptor::putVoxel(int x, int y, int z) {
 }
 
 void Sculptor::cutVoxel(int x, int y, int z) {
-    v[x][y][z].isOn = false;
+    if(x>=0 && y>=0 && z>=0 && x<nx && y<ny && z<nz){
+        v[x][y][z].isOn = false;
+    }
 }
 
 void Sculptor::putBox(int x0, int x1, int y0, int y1, int z0, int z1) {
@@ -109,7 +89,7 @@ void Sculptor::putSphere(int xcenter, int ycenter, int zcenter, int radius) {
     for (int i = (xcenter-radius); i < (xcenter+radius); i++) {
         for (int j = (ycenter-radius); j < (ycenter+radius); j++) {
             for (int k = (zcenter-radius); k < (zcenter+radius); k++) {
-                if ((((float)pow((i - xcenter), 2))/((float)(pow(radius, 2)))) + (((float)pow((j - ycenter), 2))/((float)(pow(radius, 2)))) + ((((float)pow((k - zcenter), 2)))/((float)(pow(radius, 2)))) <= 1.0) {
+                if((pow((i-xcenter),2)+pow((j-ycenter),2)+pow((k-zcenter),2))<=pow(radius,2)){
                     putVoxel(i,j,k);
                 }
             }
@@ -121,7 +101,7 @@ void Sculptor::cutSphere(int xcenter, int ycenter, int zcenter, int radius) {
     for (int i = (xcenter-radius); i < (xcenter+radius); i++) {
         for (int j = (ycenter-radius); j < (ycenter+radius); j++) {
             for (int k = (zcenter-radius); k < (zcenter+radius); k++) {
-                if ((((float)pow((i - xcenter), 2))/((float)(pow(radius, 2)))) + (((float)pow((j - ycenter), 2))/((float)(pow(radius, 2)))) + ((((float)pow((k - zcenter), 2)))/((float)(pow(radius, 2)))) <= 1.0) {
+                if((pow((i-xcenter),2)+pow((j-ycenter),2)+pow((k-zcenter),2))<=pow(radius,2)){
                     cutVoxel(i,j,k);
                 }
             }
@@ -133,7 +113,7 @@ void Sculptor::putEllipsoid(int xcenter, int ycenter, int zcenter, int rx, int r
     for (int i = (xcenter-rx); i < (xcenter+rx); i++){
         for (int j = (ycenter-ry); j < (ycenter+ry); j++){
             for (int k = (zcenter-rz); k < (zcenter+rz); k++){
-                if (((float)pow((i-xcenter),2)/(pow(rx,2))) + (((float)(pow((j-ycenter),2))/(float)pow(ry,2))) + (((float)pow((k-zcenter),2))/(float)(pow(rz,2))) <= 1.0){
+                if((((float)pow((i-xcenter),2)/(float)pow(rx,2))+((float)pow((j-ycenter),2)/(float)pow(ry,2))+((float)pow((k-zcenter),2)/(float)pow(rz,2)))<=1.0){
                     putVoxel(i,j,k);
                 }
             }
@@ -145,7 +125,7 @@ void Sculptor::cutEllipsoid(int xcenter, int ycenter, int zcenter, int rx, int r
     for (int i = (xcenter-rx); i < (xcenter+rx); i++){
         for (int j = (ycenter-ry); j < (ycenter+ry); j++){
             for (int k = (zcenter-rz); k < (zcenter+rz); k++){
-                if (((float)pow((i-xcenter),2)/(pow(rx,2))) + (((float)(pow((j-ycenter),2))/(float)pow(ry,2))) + (((float)pow((k-zcenter),2))/(float)(pow(rz,2))) <= 1.0){
+                if((((float)pow((i-xcenter),2)/(float)pow(rx,2))+((float)pow((j-ycenter),2)/(float)pow(ry,2))+((float)pow((k-zcenter),2)/(float)pow(rz,2)))<=1.0){
                     cutVoxel(i,j,k);
                 }
             }
@@ -154,93 +134,57 @@ void Sculptor::cutEllipsoid(int xcenter, int ycenter, int zcenter, int rx, int r
 }
 
 void Sculptor::writeOFF(char* filename) {
-    char s[nx][ny][nz];
-    int nvox = 0, nfc = 0;
-    bool surx, sury, surz;
-
-    for (int i = 0; i < nx; i++){
-        for (int j = 0; j < ny; j++){
-            for (int k = 0; k < nz; k++){
-                s[i][j][k] = 0;
+    int n_vertices = 0, n_faces = 0, n_arestas = 0;
+            ofstream fileout;
+            fileout.open(filename);
+            if(!fileout.is_open()){
+                exit(0);
             }
-        }
-    }
-
-    ofstream outfile (filename);
-    outfile << "OFF" << endl;
-
-    for (int i = 0; i < nx; i++){
-        for (int j = 0; j < ny; j++){
-            for (int k = 0; k < nz; k++){
-                surx = false;
-                sury = false;
-                surz = false;
-
-                if (v[i-1][j][k].isOn && v[i+1][j][k].isOn){
-                    surx = true;
-                }
-
-                if (v[i][j-1][k].isOn && v[i][j+1][k].isOn){
-                    sury = true;
-                }
-
-                if (v[i][j][k-1].isOn && v[i][j][k+1].isOn){
-                    surz = true;
-                }
-
-                if (surx && sury && surz) {
-                    s[i][j][k] = 1;
+            for(int i = 0; i < nx; i++){
+                for(int j = 0; j < ny; j++){
+                    for(int k = 0; k < nz; k++){
+                        if(v[i][j][k].isOn){
+                            n_vertices += 8;
+                            n_faces += 6;
+                        }
+                    }
                 }
             }
-        }
-    }
+            fileout<<"OFF"<<endl;
+            fileout<<n_vertices<<" "<<n_faces<<" "<<n_arestas<<endl;
 
-    for (int i = 0; i < nx; i++){
-        for (int j = 0; j < ny; j++){
-            for (int k = 0; k < nz; k++){
-                if (v[i][j][k].isOn && (s[i][j][k] == 0)) {
-                    nvox++;
+            for(int i = 0; i < nx; i++){
+                for(int j = 0; j < ny; j++){
+                    for(int k = 0; k < nz; k++){
+                        if(v[i][j][k].isOn){
+                            fileout<<i-0.5<<" "<<j+0.5<<" "<<k-0.5<<endl;
+                            fileout<<i-0.5<<" "<<j-0.5<<" "<<k-0.5<<endl;
+                            fileout<<i+0.5<<" "<<j-0.5<<" "<<k-0.5<<endl;
+                            fileout<<i+0.5<<" "<<j+0.5<<" "<<k-0.5<<endl;
+                            fileout<<i-0.5<<" "<<j+0.5<<" "<<k+0.5<<endl;
+                            fileout<<i-0.5<<" "<<j-0.5<<" "<<k+0.5<<endl;
+                            fileout<<i+0.5<<" "<<j-0.5<<" "<<k+0.5<<endl;
+                            fileout<<i+0.5<<" "<<j+0.5<<" "<<k+0.5<<endl;
+                        }
+                    }
                 }
             }
-        }
-    }
-
-    cout << (nvox);
-    outfile << 8*nvox << " " << 6*nvox << " " << 0 << std::endl;
-
-    for (int k = 0; k < nz; k++){
-        for (int j = 0; j < ny; j++){
-            for (int i = 0; i < nx; i++){
-                if (v[i][j][k].isOn && (s[i][j][k] == 0)){
-                    outfile << -0.5+i << " " << 0.5+j << " " << -0.5+k << endl;
-                    outfile << -0.5+i << " " << -0.5+j << " " << -0.5+k << endl;
-                    outfile << 0.5+i << " " << -0.5+j << " " << -0.5+k << endl;
-                    outfile << 0.5+i << " " << 0.5+j << " " << -0.5+k << endl;
-                    outfile << -0.5+i << " " << 0.5+j << " " << 0.5+k << endl;
-                    outfile << -0.5+i << " " << -0.5+j << " " << 0.5+k << endl;
-                    outfile << 0.5+i << " " << -0.5+j << " " << 0.5+k << endl;
-                    outfile << 0.5+i << " " << 0.5+j << " " << 0.5+k << endl;
+            int aux = 0;
+            for(int i = 0; i < nx; i++){
+                for(int j = 0; j < ny; j++){
+                    for(int k = 0; k < nz; k++){
+                        if(v[i][j][k].isOn){
+                            fileout<<"4 "<<0+8*aux<<" "<<3+8*aux<<" "<<2+8*aux<<" "<<1+8*aux<<" "<<v[i][j][k].r<<" "<<v[i][j][k].g<<" "<<v[i][j][k].b<<" "<<v[i][j][k].a<<endl;
+                            fileout<<"4 "<<4+8*aux<<" "<<5+8*aux<<" "<<6+8*aux<<" "<<7+8*aux<<" "<<v[i][j][k].r<<" "<<v[i][j][k].g<<" "<<v[i][j][k].b<<" "<<v[i][j][k].a<<endl;
+                            fileout<<"4 "<<0+8*aux<<" "<<1+8*aux<<" "<<5+8*aux<<" "<<4+8*aux<<" "<<v[i][j][k].r<<" "<<v[i][j][k].g<<" "<<v[i][j][k].b<<" "<<v[i][j][k].a<<endl;
+                            fileout<<"4 "<<0+8*aux<<" "<<4+8*aux<<" "<<7+8*aux<<" "<<3+8*aux<<" "<<v[i][j][k].r<<" "<<v[i][j][k].g<<" "<<v[i][j][k].b<<" "<<v[i][j][k].a<<endl;
+                            fileout<<"4 "<<3+8*aux<<" "<<7+8*aux<<" "<<6+8*aux<<" "<<2+8*aux<<" "<<v[i][j][k].r<<" "<<v[i][j][k].g<<" "<<v[i][j][k].b<<" "<<v[i][j][k].a<<endl;
+                            fileout<<"4 "<<1+8*aux<<" "<<2+8*aux<<" "<<6+8*aux<<" "<<5+8*aux<<" "<<v[i][j][k].r<<" "<<v[i][j][k].g<<" "<<v[i][j][k].b<<" "<<v[i][j][k].a<<endl;
+                            aux++;
+                        }
+                    }
                 }
             }
-        }
-    }
-
-    for (int k = 0; k < nz; k++){
-        for (int j = 0; j < ny; j++){
-            for (int i = 0; i < nx; i++){
-                if (v[i][j][j].isOn && (s[i][j][k] == 0)){
-                    outfile << "4 " << 0+nfc*8 << " " << 3+nfc*8 << " " << 2+nfc*8 << " " << 1+nfc*8 << " " << v[i][j][k].r << " " << v[i][j][k].g << " " << v[i][j][k].b << " " << v[i][j][k].a << endl
-                            << "4 " << 4+nfc*8 << " " << 5+nfc*8 << " " << 6+nfc*8 << " " << 7+nfc*8 << " " << v[i][j][k].r << " " << v[i][j][k].g << " " << v[i][j][k].b << " " << v[i][j][k].a << endl
-                            << "4 " << 0+nfc*8 << " " << 1+nfc*8 << " " << 5+nfc*8 << " " << 4+nfc*8 << " " << v[i][j][k].r << " " << v[i][j][k].g << " " << v[i][j][k].b << " " << v[i][j][k].a << endl
-                            << "4 " << 0+nfc*8 << " " << 4+nfc*8 << " " << 7+nfc*8 << " " << 3+nfc*8 << " " << v[i][j][k].r << " " << v[i][j][k].g << " " << v[i][j][k].b << " " << v[i][j][k].a << endl
-                            << "4 " << 3+nfc*8 << " " << 7+nfc*8 << " " << 6+nfc*8 << " " << 2+nfc*8 << " " << v[i][j][k].r << " " << v[i][j][k].g << " " << v[i][j][k].b << " " << v[i][j][k].a << endl
-                            << "4 " << 1+nfc*8 << " " << 2+nfc*8 << " " << 6+nfc*8 << " " << 5+nfc*8 << " " << v[i][j][k].r << " " << v[i][j][k].g << " " << v[i][j][k].b << " " << v[i][j][k].a << endl;
-                    nfc++;
-                }
-            }
-        }
-    }
-
-    outfile.close();
+            fileout.close();
 }
 

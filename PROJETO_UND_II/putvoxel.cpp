@@ -2,21 +2,23 @@
 #include "figurageometrica.h"
 #include "sculptor.h"
 
-PutVoxel::PutVoxel(int x, int y, int z) {
-    if ((x>=nx) || (y>=ny) || (z>=nz)){
-        return;
-    }
-    if ((x<0) || (y<0) || (z<0)){
-        return;
-    }
-    v[x][y][z].isOn = true;
-    v[x][y][z].r = rl;
-    v[x][y][z].g = gl;
-    v[x][y][z].b = bl;
-    v[x][y][z].a = al;
+PutVoxel::PutVoxel(int _x, int _y, int _z, float _r, float _g, float _b, float _a) {
+    x = _x;
+    y = _y;
+    z = _z;
+    r = _r;
+    g = _g;
+    b = _b;
+    a = _a;
 }
 
-PutVoxel::draw(Sculptor &t) {
-
-    PutVoxel(int x, int y, int z);
+void PutVoxel::draw(Sculptor &t) {
+    t.setColor(r, g, b, a);
+    t.putVoxel(x, y, z);
 }
+
+PutVoxel::~PutVoxel(){
+
+}
+
+

@@ -6,15 +6,43 @@
 
 using namespace std;
 
-Sculptor::Sculptor(float r, float g, float b, float alpha) {
+Sculptor::Sculptor(int qx, int qy, int qz) {
+    nx = qx;
+    ny = qy;
+    nz = qz;
+
+    v = new Voxel**[nx];
+    v[0] = new Voxel*[nx*ny];
+    v[0][0] = new Voxel[nx*ny*nz];
+
+    for (int i = 0; i < nx; i++){
+            v[i+1] = v[i] + ny;
+    }
+
+    for (int j = 1; j < nx*ny; j++){
+        v[0][j]=v[0][j-1]+nz;
+    }
+
+    for (int i = 0; i < nx; i++){
+        for (int j = 0; j < ny; j++){
+            for (int k = 0; k < nz; k++){
+                v[i][j][k].isOn = false;
+            }
+        }
+    }
+}
+
+Sculptor::~Sculptor() {
+    delete [] v[0][0];
+    delete [] v[0];
+    delete [] v;
+}
+
+void Sculptor::setColor(float r, float g, float b, float alpha) {
     this -> rl = r;
     this -> gl = g;
     this -> bl = b;
     this -> al = alpha;
-}
-
-Sculptor::~Sculptor() {
-
 }
 
 void Sculptor::putVoxel(int x, int y, int z) {

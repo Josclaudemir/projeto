@@ -1,0 +1,13 @@
+INPUT(
+./debug\figurageometrica.o
+./debug\main.o
+./debug\putvoxel.o
+./debug\sculptor.o
+./debug\cutvoxel.o
+./debug\putbox.o
+./debug\cutbox.o
+./debug\putsphere.o
+./debug\cutsphere.o
+./debug\putellipsoid.o
+./debug\cutellipsoid.o
+);

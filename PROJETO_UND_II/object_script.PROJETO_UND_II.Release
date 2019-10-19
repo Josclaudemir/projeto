@@ -1,0 +1,13 @@
+INPUT(
+./release\figurageometrica.o
+./release\main.o
+./release\putvoxel.o
+./release\sculptor.o
+./release\cutvoxel.o
+./release\putbox.o
+./release\cutbox.o
+./release\putsphere.o
+./release\cutsphere.o
+./release\putellipsoid.o
+./release\cutellipsoid.o
+);

@@ -27,7 +27,7 @@ int main() {
     Sculptor *figs = nullptr;
     vector <FiguraGeometrica*>fig;
 
-    fin.open("/home/inicies/teste_2.txt");
+    fin.open("/home/demir/projeto/teste_2.txt");
     if (!fin.is_open()){
         exit (0);
     }
@@ -91,7 +91,7 @@ int main() {
     for (int i = 0; i < fig.size(); i++){
         fig[i]->draw(*figs);
     }
-    figs->writeOFF("home/inicies/arqoff.off");
+    figs->writeOFF("/home/demir/projeto/teste2.OFF");
     figs->~Sculptor();
 
     return 0;

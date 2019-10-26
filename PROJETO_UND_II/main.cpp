@@ -27,7 +27,7 @@ int main() {
     Sculptor *figs = nullptr;
     vector <FiguraGeometrica*>fig;
 
-    fin.open("/home/demir/projeto/teste_2.txt");
+    fin.open("/home/demir/projeto/boneco.txt");
     if (!fin.is_open()){
         exit (0);
     }
@@ -81,6 +81,7 @@ int main() {
             aux >> x0 >> y0 >> z0 >> radius;
             fig.push_back(new CutSphere(x0, y0, z0, radius));
         }
+
         else if (s.compare("cutellipsoid")==0){
             int x0, y0, z0, rx, ry, rz;
             aux >> x0 >> rx >> y0 >> ry >> z0 >> rz;
@@ -91,7 +92,7 @@ int main() {
     for (int i = 0; i < fig.size(); i++){
         fig[i]->draw(*figs);
     }
-    figs->writeOFF("/home/demir/projeto/teste2.OFF");
+    figs->writeOFF("/home/demir/projeto/boneco.OFF");
     figs->~Sculptor();
 
     return 0;

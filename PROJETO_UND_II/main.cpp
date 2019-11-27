@@ -27,7 +27,7 @@ int main() {
     Sculptor *figs = nullptr;
     vector <FiguraGeometrica*>fig;
 
-    fin.open("/home/demir/projeto/boneco.txt");
+    fin.open("/home/demir/projeto/teste_2.txt");
     if (!fin.is_open()){
         exit (0);
     }

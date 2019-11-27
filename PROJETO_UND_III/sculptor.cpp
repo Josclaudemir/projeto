@@ -1,190 +1,227 @@
 #include "sculptor.h"
-#include <string>
 #include <cmath>
 #include <fstream>
+#include <string>
 #include <iostream>
+#include <cstdlib>
+#include "vector"
+#include "mainwindow.h"
 
 using namespace std;
-
-Sculptor::Sculptor(int qx, int qy, int qz) {
-    nx = qx;
-    ny = qy;
-    nz = qz;
-
-    v = new Voxel**[nx];
-    v[0] = new Voxel*[nx*ny];
-    v[0][0] = new Voxel[nx*ny*nz];
-
-    for (int i = 0; i < nx; i++){
-            v[i+1] = v[i] + ny;
+//Alocação da Matriz 3D.
+Sculptor::Sculptor(int _nx,int _ny,int _nz){
+    nl=_nx;nc=_ny;np=_nz;
+    if(nl<=0||nc<=0||np<=0){
+        nl=nc=np=0;
     }
-
-    for (int j = 1; j < nx*ny; j++){
-        v[0][j]=v[0][j-1]+nz;
+    v=new Voxel**[nl];
+    if(v==nullptr){
+        cout<<"Erro na alocação."<<endl;
+        exit(0);
     }
-
-    for (int i = 0; i < nx; i++){
-        for (int j = 0; j < ny; j++){
-            for (int k = 0; k < nz; k++){
+    v[0]=new Voxel*[nl*nc];
+    if(v[0]==nullptr){
+        cout<<"Erro na alocação."<<endl;
+        exit(0);
+    }
+    v[0][0]=new Voxel[nl*nc*np];
+    if(v[0][0]==nullptr){
+        cout<<"Erro na alocação."<<endl;
+        exit(0);
+    }
+    for(int i=0; i< nl; i++)
+    {
+        if (i<(nl-1))
+        {
+            v[i+1] = v[i]+nc;
+        }
+        for(int j=1; j< nc; j++)
+        {
+            v[i][j] = v[i][j-1]+np;
+            if(j==nc-1 && i!=(nl-1))
+            {
+                v[i+1][0] = v[i][j]+np;
+            }
+        }
+    }
+    for(int i = 0; i < nl; i++){
+        for(int j = 0; j < nc; j++){
+            for(int k = 0; k < np; k++){
                 v[i][j][k].isOn = false;
             }
         }
     }
 }
-
-Sculptor::~Sculptor() {
+//Liberar a memória utilizada.
+Sculptor::~Sculptor(){
+    if(nl==0||nc==0||np==0){
+        return;
+    }
     delete [] v[0][0];
     delete [] v[0];
     delete [] v;
 }
-
-void Sculptor::setColor(float r, float g, float b, float alpha) {
-    this -> rl = r;
-    this -> gl = g;
-    this -> bl = b;
-    this -> al = alpha;
-}
-
-void Sculptor::putVoxel(int x, int y, int z) {
-    if ((x>=nx) || (y>=ny) || (z>=nz)){
-        return;
+//Atribuir as cores.
+void Sculptor::setColor(int _r, int _g, int _b, float alpha){
+    //Verificação das cores utilizadas.
+    if((_r<=(255)||_r>=0)||(_g<=255||_g>=0)||(_b<=255||_b>=0)||(alpha<=1||alpha>=0)){
+        r=_r;g=_g;b=_b;a=alpha;
     }
-    if ((x<0) || (y<0) || (z<0)){
-        return;
-    }
-    v[x][y][z].isOn = true;
-    v[x][y][z].r = rl;
-    v[x][y][z].g = gl;
-    v[x][y][z].b = bl;
-    v[x][y][z].a = al;
-}
-
-void Sculptor::cutVoxel(int x, int y, int z) {
-    if(x>=0 && y>=0 && z>=0 && x<nx && y<ny && z<nz){
-        v[x][y][z].isOn = false;
+    else {
+        cout<<"Cores invalidas"<<endl;
+        exit(1);
     }
 }
-
-void Sculptor::putBox(int x0, int x1, int y0, int y1, int z0, int z1) {
-    for (int i = x0; i < x1; i++){
-        for (int j = y0; j < y1; j++){
-            for (int k = z0; k < z1; k++){
-                putVoxel(i,j,k);
-            }
-        }
+//Criar um Voxel.
+void Sculptor::putVoxel(int x,int y,int z){
+    //Verificação das dimensões atribuida.
+    if(x<0 || x>nl || y<0 || y>nc || z<0 || z>np){
+        cout <<"Dimensoes erradas, digite novamente"<<endl;
+        exit(0);
+    }
+    //Atribuições das cores para o Voxel selecionado.
+    else{
+        v[x][y][z].isOn=true;
+        v[x][y][z].red=r;
+        v[x][y][z].blue=b;
+        v[x][y][z].green=g;
+        v[x][y][z].alpha=a;
     }
 }
-
-void Sculptor::cutBox(int x0, int x1, int y0, int y1, int z0, int z1) {
-    for (int i = x0; i < x1; i++){
-        for (int j = y0; j < y1; j++){
-            for (int k = z0; k < z1; k++){
-                cutVoxel(i,j,k);
-            }
-        }
+//Cortar um Voxel.
+void Sculptor::cutVoxel(int x,int y,int z){
+    //Verificação das dimensões atribuida.
+    if(x<0 || x>nl || y<0 || y>nc || z<0 || z>np){
+        cout <<"Dimensoes erradas, digite novamente"<<endl;
+        exit(1);
+    }
+    //Utilizando o isOn para efetuar o corte.
+    else{
+        v[x][y][z].isOn=false;
     }
 }
-
-void Sculptor::putSphere(int xcenter, int ycenter, int zcenter, int radius) {
-    for (int i = (xcenter-radius); i < (xcenter+radius); i++) {
-        for (int j = (ycenter-radius); j < (ycenter+radius); j++) {
-            for (int k = (zcenter-radius); k < (zcenter+radius); k++) {
-                if((pow((i-xcenter),2)+pow((j-ycenter),2)+pow((k-zcenter),2))<=pow(radius,2)){
-                    putVoxel(i,j,k);
+void Sculptor::writeOFF(string filename){
+    //Variavel para efetuar as funções de fluxos.
+    ofstream fout2;
+    //Contador para o número de vertices.
+    int Nvertices=0;
+    //Contador para o número de faces.
+    int Nfaces=0;
+    //Variavel auxiliar na execução e determinação de cada face para cada Voxel.
+    int aux=0;
+    //Abrindo arquivo.
+    fout2.open("C:/Users/luizv/Downloads/Teste_New/DataSave/"+filename+".off");
+    //Condição para determinar se o arquivo foi aberto.
+    if(fout2.is_open()){
+        cout << "arquivo OFF foi aberto\n";
+    }
+    else{
+        cout << "arquivo OFF nao foi aberto\n";
+        exit(1);
+    }
+    //Primeira linha do arquivo. Linha de reconhecimento.
+    fout2<<"OFF"<<endl;
+    //Contar a quantidade de vertices e faces. Obs.: isOn deve ser verdadeiro.
+    for(int i=0;i<nl;i++){
+        for(int j=0;j<nc;j++){
+            for(int k=0;k<np;k++){
+                if(v[i][j][k].isOn){
+                    Nvertices=Nvertices+8;
+                    Nfaces=Nfaces+6;
                 }
             }
         }
     }
-}
-
-void Sculptor::cutSphere(int xcenter, int ycenter, int zcenter, int radius) {
-    for (int i = (xcenter-radius); i < (xcenter+radius); i++) {
-        for (int j = (ycenter-radius); j < (ycenter+radius); j++) {
-            for (int k = (zcenter-radius); k < (zcenter+radius); k++) {
-                if((pow((i-xcenter),2)+pow((j-ycenter),2)+pow((k-zcenter),2))<=pow(radius,2)){
-                    cutVoxel(i,j,k);
+    //Segunda linha do arquivo. Linha para mostra quantidade de vertices e faces.
+    fout2<<Nvertices<<" "<<Nfaces<<" "<<0<<endl;
+    //Dimensionamento de cada vertice em relação a cada Voxel com isOn true. Obs.: dimensão de cada Voxel 1.
+    for(int i=0;i<nl;i++){
+        for(int j=0;j<nc;j++){
+            for(int k=0;k<np;k++){
+                if(v[i][j][k].isOn){
+                        fout2<<i-0.5<<" "<<j+0.5<<" "<<k-0.5<<endl;
+                        fout2<<i-0.5<<" "<<j-0.5<<" "<<k-0.5<<endl;
+                        fout2<<i+0.5<<" "<<j-0.5<<" "<<k-0.5<<endl;
+                        fout2<<i+0.5<<" "<<j+0.5<<" "<<k-0.5<<endl;
+                        fout2<<i-0.5<<" "<<j+0.5<<" "<<k+0.5<<endl;
+                        fout2<<i-0.5<<" "<<j-0.5<<" "<<k+0.5<<endl;
+                        fout2<<i+0.5<<" "<<j-0.5<<" "<<k+0.5<<endl;
+                        fout2<<i+0.5<<" "<<j+0.5<<" "<<k+0.5<<endl;
                 }
             }
         }
     }
-}
-
-void Sculptor::putEllipsoid(int xcenter, int ycenter, int zcenter, int rx, int ry, int rz) {
-    for (int i = (xcenter-rx); i < (xcenter+rx); i++){
-        for (int j = (ycenter-ry); j < (ycenter+ry); j++){
-            for (int k = (zcenter-rz); k < (zcenter+rz); k++){
-                if((((float)pow((i-xcenter),2)/(float)pow(rx,2))+((float)pow((j-ycenter),2)/(float)pow(ry,2))+((float)pow((k-zcenter),2)/(float)pow(rz,2)))<=1.0){
-                    putVoxel(i,j,k);
+    //Dimensionar cada face de cada Voxel e atribuindo as cores correspondente.
+    for(int i=0;i<nl;i++){
+        for(int j=0;j<nc;j++){
+            for(int k=0;k<np;k++){
+                if(v[i][j][k].isOn){
+                    fout2<<4<<" "<<aux+0<<" "<<aux+3<<" "<<aux+2<<" "<<aux+1<<" "<<v[i][j][k].red<<" "
+                    <<v[i][j][k].green<<" "<<v[i][j][k].blue<<" "<<v[i][j][k].alpha<<endl;
+                    fout2<<4<<" "<<aux+4<<" "<<aux+5<<" "<<aux+6<<" "<<aux+7<<" "<<v[i][j][k].red<<" "
+                    <<v[i][j][k].green<<" "<<v[i][j][k].blue<<" "<<v[i][j][k].alpha<<endl;
+                    fout2<<4<<" "<<aux+0<<" "<<aux+1<<" "<<aux+5<<" "<<aux+4<<" "<<v[i][j][k].red<<" "
+                    <<v[i][j][k].green<<" "<<v[i][j][k].blue<<" "<<v[i][j][k].alpha<<endl;
+                    fout2<<4<<" "<<aux+0<<" "<<aux+4<<" "<<aux+7<<" "<<aux+3<<" "<<v[i][j][k].red<<" "
+                    <<v[i][j][k].green<<" "<<v[i][j][k].blue<<" "<<v[i][j][k].alpha<<endl;
+                    fout2<<4<<" "<<aux+3<<" "<<aux+7<<" "<<aux+6<<" "<<aux+2<<" "<<v[i][j][k].red<<" "
+                    <<v[i][j][k].green<<" "<<v[i][j][k].blue<<" "<<v[i][j][k].alpha<<endl;
+                    fout2<<4<<" "<<aux+1<<" "<<aux+2<<" "<<aux+6<<" "<<aux+5<<" "<<v[i][j][k].red<<" "
+                    <<v[i][j][k].green<<" "<<v[i][j][k].blue<<" "<<v[i][j][k].alpha<<endl;
+                    aux=aux+8;
                 }
             }
         }
     }
+    //Condição para apresentar o fim do arquivo.
+    if(fout2.is_open()){
+        cout << "arquivo OFF salvo"<<endl;
+    }
+
 }
 
-void Sculptor::cutEllipsoid(int xcenter, int ycenter, int zcenter, int rx, int ry, int rz) {
-    for (int i = (xcenter-rx); i < (xcenter+rx); i++){
-        for (int j = (ycenter-ry); j < (ycenter+ry); j++){
-            for (int k = (zcenter-rz); k < (zcenter+rz); k++){
-                if((((float)pow((i-xcenter),2)/(float)pow(rx,2))+((float)pow((j-ycenter),2)/(float)pow(ry,2))+((float)pow((k-zcenter),2)/(float)pow(rz,2)))<=1.0){
-                    cutVoxel(i,j,k);
-                }
+vector<vector<Voxel>> Sculptor::readPlano(int _dim, int _plano){
+    vector<vector<Voxel>> matriz;
+    vector<Voxel> vetor;
+    if(_plano == XY){
+        vetor.resize(nc);
+        for(int i = 0; i<nl; i++){
+            for(int j = 0; j<nc; j++){
+                vetor[j].isOn=v[i][j][_dim].isOn;
+                vetor[j].red =v[i][j][_dim].red;
+                vetor[j].green=v[i][j][_dim].green;
+                vetor[j].blue=v[i][j][_dim].blue;
+                vetor[j].alpha= v[i][j][_dim].alpha;
             }
+            matriz.push_back(vetor);
         }
     }
+    if(_plano == ZX){
+        vetor.resize(nl);
+        for(int i = 0; i<nl; i++){
+            for(int j = 0; j <np; j++){
+                vetor[j].isOn=v[i][_dim][j].isOn;
+                vetor[j].red=v[i][_dim][j].red;
+                vetor[j].green=v[i][_dim][j].green;
+                vetor[j].blue=v[i][_dim][j].blue;
+                vetor[j].alpha=v[i][_dim][j].alpha;
+            }
+            matriz.push_back(vetor);
+        }
+    }
+    if(_plano == YZ){
+        vetor.resize(np);
+        for(int i = 0; i<nc; i++){
+            for(int j = 0; j<np; j++){
+                vetor[j].isOn=v[_dim][i][j].isOn;
+                vetor[j].red=v[_dim][i][j].red;
+                vetor[j].green=v[_dim][i][j].green;
+                vetor[j].blue=v[_dim][i][j].blue;
+                vetor[j].alpha=v[_dim][i][j].alpha;
+            }
+            matriz.push_back(vetor);
+        }
+    }
+    vetor.clear();
+    return matriz;
 }
-
-void Sculptor::writeOFF(char* filename) {
-    int n_vertices = 0, n_faces = 0, n_arestas = 0;
-            ofstream fileout;
-            fileout.open(filename);
-            if(!fileout.is_open()){
-                exit(0);
-            }
-            for(int i = 0; i < nx; i++){
-                for(int j = 0; j < ny; j++){
-                    for(int k = 0; k < nz; k++){
-                        if(v[i][j][k].isOn){
-                            n_vertices += 8;
-                            n_faces += 6;
-                        }
-                    }
-                }
-            }
-            fileout<<"OFF"<<endl;
-            fileout<<n_vertices<<" "<<n_faces<<" "<<n_arestas<<endl;
-
-            for(int i = 0; i < nx; i++){
-                for(int j = 0; j < ny; j++){
-                    for(int k = 0; k < nz; k++){
-                        if(v[i][j][k].isOn){
-                            fileout<<i-0.5<<" "<<j+0.5<<" "<<k-0.5<<endl;
-                            fileout<<i-0.5<<" "<<j-0.5<<" "<<k-0.5<<endl;
-                            fileout<<i+0.5<<" "<<j-0.5<<" "<<k-0.5<<endl;
-                            fileout<<i+0.5<<" "<<j+0.5<<" "<<k-0.5<<endl;
-                            fileout<<i-0.5<<" "<<j+0.5<<" "<<k+0.5<<endl;
-                            fileout<<i-0.5<<" "<<j-0.5<<" "<<k+0.5<<endl;
-                            fileout<<i+0.5<<" "<<j-0.5<<" "<<k+0.5<<endl;
-                            fileout<<i+0.5<<" "<<j+0.5<<" "<<k+0.5<<endl;
-                        }
-                    }
-                }
-            }
-            int aux = 0;
-            for(int i = 0; i < nx; i++){
-                for(int j = 0; j < ny; j++){
-                    for(int k = 0; k < nz; k++){
-                        if(v[i][j][k].isOn){
-                            fileout<<"4 "<<0+8*aux<<" "<<3+8*aux<<" "<<2+8*aux<<" "<<1+8*aux<<" "<<v[i][j][k].r<<" "<<v[i][j][k].g<<" "<<v[i][j][k].b<<" "<<v[i][j][k].a<<endl;
-                            fileout<<"4 "<<4+8*aux<<" "<<5+8*aux<<" "<<6+8*aux<<" "<<7+8*aux<<" "<<v[i][j][k].r<<" "<<v[i][j][k].g<<" "<<v[i][j][k].b<<" "<<v[i][j][k].a<<endl;
-                            fileout<<"4 "<<0+8*aux<<" "<<1+8*aux<<" "<<5+8*aux<<" "<<4+8*aux<<" "<<v[i][j][k].r<<" "<<v[i][j][k].g<<" "<<v[i][j][k].b<<" "<<v[i][j][k].a<<endl;
-                            fileout<<"4 "<<0+8*aux<<" "<<4+8*aux<<" "<<7+8*aux<<" "<<3+8*aux<<" "<<v[i][j][k].r<<" "<<v[i][j][k].g<<" "<<v[i][j][k].b<<" "<<v[i][j][k].a<<endl;
-                            fileout<<"4 "<<3+8*aux<<" "<<7+8*aux<<" "<<6+8*aux<<" "<<2+8*aux<<" "<<v[i][j][k].r<<" "<<v[i][j][k].g<<" "<<v[i][j][k].b<<" "<<v[i][j][k].a<<endl;
-                            fileout<<"4 "<<1+8*aux<<" "<<2+8*aux<<" "<<6+8*aux<<" "<<5+8*aux<<" "<<v[i][j][k].r<<" "<<v[i][j][k].g<<" "<<v[i][j][k].b<<" "<<v[i][j][k].a<<endl;
-                            aux++;
-                        }
-                    }
-                }
-            }
-            fileout.close();
-}
-
